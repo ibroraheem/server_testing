@@ -69,15 +69,21 @@ const getAnalytics = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         const admin = await Admin.findOne({ _id: decoded.id })
         if (!admin) return res.status(401).json({ message: "Unauthorized" })
-        const users = await User.find({})
-        const today = new Date()
-        const todayUsers = await User.find({ createdAt: { $gte: today } })
+        const users = await User.find();
+        let _todayUser = []
+        users.find((user) => {
+            const todayDate = new Date().getDate() + '-' + new Date().getMonth() + '-' + new Date().getFullYear();
+            const userDate = new Date(user.createdAt).getDate() + '-' + new Date(user.createdAt).getMonth() + '-' + new Date(user.createdAt).getFullYear();
+            if (userDate == todayDate) {
+                _todayUser.push(user);
+            }
+        })
 
         let totalMinedBalance = 0
         users.forEach(user => {
             totalMinedBalance += user.balance.minedBalance + user.balance.referralBalance
         })
-        res.status(200).json({ totalRegisteredUsers: users.length, totalRegisteredUsersToday: todayUsers.length, totalMinedBalance })
+        res.status(200).json({ totalRegisteredUsers: users.length, totalRegisteredUsersToday: _todayUser.length, totalMinedBalance })
     } catch (error) {
         res.status(500).json({ error: error.message })
     }
